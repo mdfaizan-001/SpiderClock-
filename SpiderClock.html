@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Epic Glowing Spider Clock</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #030305;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    canvas {
+      filter: drop-shadow(0 0 25px rgba(255, 100, 0, 0.35));
+    }
+  </style>
+</head>
+<body>
+  <canvas id="clockCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('clockCanvas');
+    const ctx = canvas.getContext('2d');
+    const size = 650;
+    canvas.width = size;
+    canvas.height = size;
+    const center = size / 2;
+    const radius = 220;
+
+    // Glowing Particle Effect for Spider Feet
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 2.5 + 1;
+        this.speedX = (Math.random() - 0.5) * 1.5;
+        this.speedY = (Math.random() - 0.5) * 1.5;
+        this.color = color;
+        this.alpha = 1;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.alpha -= 0.03;
+      }
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    let particles = [];
+      function drawClockWeb(time) {
+      // Background Radial Pulse
+      const pulse = Math.sin(time * 0.002) * 5;
+      
+      ctx.strokeStyle = 'rgba(255, 120, 0, 0.08)';
+      ctx.lineWidth = 1;
+
+      // Web Webs Concentric Circles
+      for (let r = 40; r <= radius + 10; r += 35) {
+        ctx.beginPath();
+        ctx.arc(center, center, r + pulse * 0.3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Web Spokes connecting to Numbers
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * Math.PI / 6) - (Math.PI / 2);
+        const x = center + Math.cos(angle) * (radius + 15);
+        const y = center + Math.sin(angle) * (radius + 15);
+
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = 'rgba(255, 100, 0, 0.06)';
+        ctx.stroke();
+      }
+
+      // Neon Numbers
+      ctx.font = '900 26px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let i = 1; i <= 12; i++) {
+        const angle = (i * Math.PI / 6) - (Math.PI / 2);
+        const x = center + Math.cos(angle) * radius;
+        const y = center + Math.sin(angle) * radius;
+
+        // Number Outer Glow
+        ctx.shadowColor = '#ff6600';
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillText(i, x, y);
+      }
+      ctx.shadowBlur = 0; // Reset
+    }
+
+    function drawSpiderLeg(targetAngle, length, jointFlex, color, thickness, emitParticles = false) {
+      const endX = center + Math.cos(targetAngle) * length;
+      const endY = center + Math.sin(targetAngle) * length;
+      // Joint Calculation for Natural Bending
+      const midDist = length * 0.58;
+      const jointX = center + Math.cos(targetAngle + jointFlex) * midDist;
+      const jointY = center + Math.sin(targetAngle + jointFlex) * midDist;
+      // Outer Glow for Leg
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = thickness;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.lineTo(jointX, jointY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      // Sharp Claw/Tip
+      ctx.beginPath();
+      ctx.arc(endX, endY, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      // Emit glowing sparks at foot tip
+      if (emitParticles && Math.random() < 0.4) {
+        particles.push(new Particle(endX, endY, color));
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    function drawSpiderBody(time) {
+      // Breathing scale effect
+      const breath = Math.sin(time * 0.004) * 1.2;
+      ctx.shadowColor = '#ff4500';
+      ctx.shadowBlur = 15;
+      // Abdomen (Rear Body)
+      ctx.beginPath();
+      ctx.ellipse(center, center + 16, 18 + breath, 24 + breath, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#cc3700';
+      ctx.fill();
+      // Cephalothorax (Front Body)
+      ctx.beginPath();
+      ctx.ellipse(center, center - 6, 12 + breath * 0.5, 15 + breath * 0.5, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff5500';
+      ctx.fill();
+      // Spider Eyes Pulse
+      const eyeGlow = Math.abs(Math.sin(time * 0.005)) * 10 + 5;
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = eyeGlow;
+      ctx.fillStyle = '#ffffff';
+      // Multiple eyes structure
+      ctx.beginPath();
+      ctx.arc(center - 4, center - 14, 2.5, 0, Math.PI * 2);
+      ctx.arc(center + 4, center - 14, 2.5, 0, Math.PI * 2);
+      ctx.arc(center - 8, center - 11, 1.8, 0, Math.PI * 2);
+      ctx.arc(center + 8, center - 11, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function render() {
+      const time = Date.now();
+      ctx.clearRect(0, 0, size, size);
+      // 1. Draw Dial Web & Numbers
+      drawClockWeb(time);
+      // 2. Fetch Time
+      const now = new Date();
+      const h = now.getHours() % 12;
+      const m = now.getMinutes();
+      const s = now.getSeconds();
+      const ms = now.getMilliseconds();
+      const secAngle = ((s + ms / 1000) * Math.PI / 30) - (Math.PI / 2);
+      const minAngle = ((m + s / 60) * Math.PI / 30) - (Math.PI / 2);
+      const hourAngle = ((h + m / 60) * Math.PI / 6) - (Math.PI / 2);
+      // Organic Leg Tremor/Movement
+      const legWiggle = Math.sin(time * 0.01) * 0.02;
+      // 3. Draw Spider Clock Leg Hands
+      // Second Hand Leg (Fastest + Particle trail)
+      drawSpiderLeg(secAngle, radius * 0.88, 0.35 + legWiggle, '#ff2200', 2.5, true);
+      // Minute Hand Leg
+      drawSpiderLeg(minAngle, radius * 0.72, -0.3 - legWiggle, '#ff7700', 4, false);
+      // Hour Hand Leg
+      drawSpiderLeg(hourAngle, radius * 0.52, 0.28, '#ffaa00', 5.5, false);
+      // Decorative Dynamic Spider Legs
+      const idleLegOffset = Math.sin(time * 0.003) * 0.06;
+      drawSpiderLeg(minAngle + 0.9 + idleLegOffset, radius * 0.45, -0.5, '#b33600', 3, false);
+      drawSpiderLeg(minAngle - 0.9 - idleLegOffset, radius * 0.45, 0.5, '#b33600', 3, false);
+      drawSpiderLeg(hourAngle + 1.2, radius * 0.38, -0.4, '#802600', 2.5, false);
+      drawSpiderLeg(hourAngle - 1.2, radius * 0.38, 0.4, '#802600', 2.5, false);
+      // 4. Update & Render Glowing Particles
+      particles.forEach((p, index) => {
+        p.update();
+        p.draw();
+        if (p.alpha <= 0) particles.splice(index, 1);
+      });
+      // 5. Center Spider Body
+      drawSpiderBody(time);
+      requestAnimationFrame(render);
+    }
+
+    render();
+  </script>
+</body>
+</html>
